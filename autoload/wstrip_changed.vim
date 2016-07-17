@@ -80,3 +80,10 @@ function! wstrip_changed#clean() abort
   let @/ = histget('search', -1)
   call winrestview(view)
 endfunction
+
+
+function! wstrip_changed#auto() abort
+  if get(b:, 'wstrip_auto', get(g:, 'wstrip_auto', 0))
+    call wstrip_changed#clean()
+  endif
+endfunction
