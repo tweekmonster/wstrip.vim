@@ -87,3 +87,10 @@ function! wstrip_changed#auto() abort
     call wstrip_changed#clean()
   endif
 endfunction
+
+
+function! wstrip_changed#syntax() abort
+  if get(b:, 'wstrip_highlight', get(g:, 'wstrip_highlight', 1))
+    syntax match TrailingWhiteSpace /\s\+$/ containedin=ALL
+  endif
+endfunction
