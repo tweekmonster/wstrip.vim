@@ -54,6 +54,10 @@ function! s:get_diff_lines() abort
   let difflines = split(system(printf(cmd, buf_file, tmpfile)), "\n")
   call delete(tmpfile)
 
+  if v:shell_error
+    return [[1, line('$')]]
+  endif
+
   let groups = []
 
   for line in difflines
