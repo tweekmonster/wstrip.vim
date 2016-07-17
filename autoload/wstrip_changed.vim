@@ -1,3 +1,6 @@
+let s:pattern = '\s\+$'
+
+
 function! s:cleanable() abort
   return buflisted(bufnr('%')) && empty(&buftype)
 endfunction
@@ -84,9 +87,15 @@ function! wstrip_changed#clean() abort
     return
   endif
 
+  let wspattern = s:pattern
+
+  if exists('b:wstrip_trailing_max')
+    let wspattern = '\s\{'.b:wstrip_trailing_max.'}\zs'.wspattern
+  endif
+
   let view = winsaveview()
   for group in s:get_diff_lines()
-    execute join(group, ',').'s/\s\+$//e'
+    execute join(group, ',').'s/'.wspattern.'//e'
   endfor
   call histdel('search', -1)
   let @/ = histget('search', -1)
@@ -103,6 +112,13 @@ endfunction
 
 function! wstrip_changed#syntax() abort
   if s:cleanable() && get(b:, 'wstrip_highlight', get(g:, 'wstrip_highlight', 1))
-    syntax match TrailingWhiteSpace /\s\+$/ containedin=ALL
+    let wspattern = s:pattern
+    if exists('b:wstrip_trailing_max')
+      let wspattern = '/\s\{'.b:wstrip_trailing_max.'}'.wspattern.'/ms=s+'.b:wstrip_trailing_max
+    else
+      let wspattern = '/'.wspattern.'/'
+    endif
+
+    execute 'syntax match TrailingWhiteSpace '.wspattern.' containedin=ALL'
   endif
 endfunction
