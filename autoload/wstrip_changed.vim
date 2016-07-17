@@ -63,6 +63,9 @@ function! s:get_diff_lines() abort
     let added = matchstr(line, '+\zs[0-9,]\+')
     if added =~# ','
       let parts = map(split(added, ','), 'str2nr(v:val)')
+      if !parts[1]
+        continue
+      endif
       let start_line = parts[0]
       let end_line = parts[0] + (parts[1] - 1)
     else
