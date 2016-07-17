@@ -1,3 +1,8 @@
+function! s:cleanable() abort
+  return buflisted(bufnr('%')) && empty(&buftype)
+endfunction
+
+
 function! s:is_git_repo() abort
   let last_dir = ''
   let cur_dir = expand('%:p:h')
@@ -72,6 +77,10 @@ endfunction
 
 
 function! wstrip_changed#clean() abort
+  if !s:cleanable()
+    return
+  endif
+
   let view = winsaveview()
   for group in s:get_diff_lines()
     execute join(group, ',').'s/\s\+$//e'
@@ -90,7 +99,7 @@ endfunction
 
 
 function! wstrip_changed#syntax() abort
-  if get(b:, 'wstrip_highlight', get(g:, 'wstrip_highlight', 1))
+  if s:cleanable() && get(b:, 'wstrip_highlight', get(g:, 'wstrip_highlight', 1))
     syntax match TrailingWhiteSpace /\s\+$/ containedin=ALL
   endif
 endfunction
