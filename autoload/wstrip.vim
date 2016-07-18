@@ -86,7 +86,7 @@ function! s:get_diff_lines() abort
 endfunction
 
 
-function! wstrip_changed#clean() abort
+function! wstrip#clean() abort
   if !s:cleanable()
     return
   endif
@@ -107,14 +107,14 @@ function! wstrip_changed#clean() abort
 endfunction
 
 
-function! wstrip_changed#auto() abort
+function! wstrip#auto() abort
   if get(b:, 'wstrip_auto', get(g:, 'wstrip_auto', 0))
-    call wstrip_changed#clean()
+    call wstrip#clean()
   endif
 endfunction
 
 
-function! wstrip_changed#syntax() abort
+function! wstrip#syntax() abort
   if s:cleanable() && get(b:, 'wstrip_highlight', get(g:, 'wstrip_highlight', 1))
     let wspattern = s:pattern
     if exists('b:wstrip_trailing_max')
