@@ -123,6 +123,6 @@ function! wstrip#syntax() abort
       let wspattern = '/'.wspattern.'/'
     endif
 
-    execute 'syntax match TrailingWhiteSpace '.wspattern.' containedin=ALL'
+    execute 'syntax match WStripTrailing '.wspattern.' containedin=ALL'
   endif
 endfunction
