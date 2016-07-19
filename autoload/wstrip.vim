@@ -23,8 +23,6 @@ endfunction
 
 
 function! s:get_diff_lines() abort
-  let has_grep = executable('grep')
-
   if s:is_git_repo() && executable('git')
     let cmd = 'git diff -U0 --no-ext-diff HEAD:"%s" "%s"'
   elseif executable('diff')
@@ -36,12 +34,6 @@ function! s:get_diff_lines() abort
   let buf_file = expand('%')
   if empty(buf_file)
     return []
-  endif
-
-  if has_grep
-    " If grep is available, pre-filter the lines so this script doesn't have
-    " to.
-    let cmd .= ' | grep "^@@"'
   endif
 
   " This check is done before the file is written, so the buffer contents
@@ -61,7 +53,7 @@ function! s:get_diff_lines() abort
   let groups = []
 
   for line in difflines
-    if !has_grep && line !~# '^@@'
+    if line !~# '^@@'
       continue
     endif
 
