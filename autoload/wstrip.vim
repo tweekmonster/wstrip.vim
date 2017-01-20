@@ -22,8 +22,14 @@ function! s:is_git_repo() abort
 endfunction
 
 
+function! s:is_tracked() abort
+  call system(printf('git ls-files --error-unmatch "%s"', expand('%')))
+  return !v:shell_error
+endfunction
+
+
 function! s:get_diff_lines() abort
-  if s:is_git_repo() && executable('git')
+  if s:is_git_repo() && executable('git') && s:is_tracked()
     let cmd = 'git diff -U0 --no-ext-diff HEAD:"%s" "%s"'
   elseif executable('diff')
     let cmd = 'diff -U0 "%s" "%s"'
