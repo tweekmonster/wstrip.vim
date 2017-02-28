@@ -29,20 +29,20 @@ endfunction
 
 
 function! s:get_diff_lines() abort
-  if s:is_git_repo() && executable('git') && s:is_tracked()
-    let cmd = 'git diff -U0 --no-ext-diff HEAD:"%s" "%s"'
-  elseif executable('diff')
-    let cmd = 'diff -U0 "%s" "%s"'
-  else
-    return []
-  endif
-
-  if !isdirectory(expand('%:p:h'))
+  if &readonly || !&modifiable || !empty(&buftype)
     return []
   endif
 
   let buf_file = expand('%')
-  if empty(buf_file)
+  if empty(bufname('%')) || !filereadable(buf_file)
+    return [[1, line('$')]]
+  endif
+
+  if executable('git') && s:is_git_repo() && s:is_tracked()
+    let cmd = 'git diff -U0 --no-ext-diff HEAD:"%s" "%s"'
+  elseif executable('diff')
+    let cmd = 'diff -U0 "%s" "%s"'
+  else
     return []
   endif
 
@@ -53,8 +53,7 @@ function! s:get_diff_lines() abort
         \ fnamemodify(buf_file, ':t'))
   call writefile(getline(1, '$'), tmpfile)
 
-  let savedfile = filereadable(buf_file) ? buf_file : "/dev/null"
-  let difflines = split(system(printf(cmd, savedfile, tmpfile)), "\n")
+  let difflines = split(system(printf(cmd, buf_file, tmpfile)), "\n")
   call delete(tmpfile)
 
   if v:shell_error
