@@ -6,24 +6,22 @@ function! s:cleanable() abort
 endfunction
 
 
-function! s:is_git_repo() abort
-  let last_dir = ''
-  let cur_dir = expand('%:p:h')
+function! s:git_repo() abort
+  if !executable('git')
+    return ''
+  endif
 
-  while last_dir != cur_dir
-    if isdirectory(cur_dir.'/.git')
-      return 1
-    endif
-    let last_dir = cur_dir
-    let cur_dir = fnamemodify(cur_dir, ':h')
-  endwhile
+  let repo = system('git rev-parse --show-toplevel')
+  if v:shell_error
+    return ''
+  endif
 
-  return 0
+  return fnamemodify(split(repo)[0], ':p')
 endfunction
 
 
-function! s:is_tracked() abort
-  call system(printf('git ls-files --error-unmatch "%s"', expand('%')))
+function! s:is_tracked(fname) abort
+  call system(printf('git ls-files --full-name --error-unmatch "%s"', a:fname))
   return !v:shell_error
 endfunction
 
@@ -33,12 +31,26 @@ function! s:get_diff_lines() abort
     return []
   endif
 
-  let buf_file = expand('%')
-  if empty(bufname('%')) || !filereadable(buf_file)
+  let buf_name = bufname('%')
+  if empty(buf_name) || !filereadable(buf_name)
     return [[1, line('$')]]
   endif
 
-  if executable('git') && s:is_git_repo() && s:is_tracked()
+  let repo = s:git_repo()
+  let fullpath = fnamemodify(buf_name, ':p')
+  let fname = fullpath
+  if !empty(repo) && fname[:len(repo)-1] == repo
+    let fname = fname[len(repo):]
+  else
+    let cwd = fnamemodify(getcwd(), ':p')
+    if fname[:len(cwd)-1] == cwd
+      let fname = fname[len(cwd):]
+    else
+      return []
+    endif
+  endif
+
+  if !empty(repo) && s:is_tracked(fullpath)
     let cmd = 'git diff -U0 --no-ext-diff HEAD:"%s" "%s"'
   elseif executable('diff')
     let cmd = 'diff -U0 "%s" "%s"'
@@ -49,11 +61,11 @@ function! s:get_diff_lines() abort
   " This check is done before the file is written, so the buffer contents
   " needs to be compared with what's already written.  git-diff also requires
   " the file to exist inside of the working tree to diff against HEAD.
-  let tmpfile = printf('%s/.wstrip.%s', fnamemodify(buf_file, ':h'),
-        \ fnamemodify(buf_file, ':t'))
+  let tmpfile = printf('%s/.wstrip.%s', fnamemodify(fullpath, ':h'),
+        \ fnamemodify(fname, ':t'))
   call writefile(getline(1, '$'), tmpfile)
 
-  let difflines = split(system(printf(cmd, buf_file, tmpfile)), "\n")
+  let difflines = split(system(printf(cmd, fname, tmpfile)), "\n")
   call delete(tmpfile)
 
   if v:shell_error
