@@ -63,7 +63,12 @@ function! s:get_diff_lines() abort
   " the file to exist inside of the working tree to diff against HEAD.
   let tmpfile = printf('%s/.wstrip.%s', fnamemodify(fullpath, ':h'),
         \ fnamemodify(fname, ':t'))
-  call writefile(getline(1, '$'), tmpfile)
+
+  let lines = getline(1, '$')
+  if &fileformat ==# 'dos'
+    call map(lines, 'v:val . "\r"')
+  endif
+  call writefile(lines, tmpfile)
 
   let difflines = split(system(printf(cmd, fname, tmpfile)), "\n")
   call delete(tmpfile)
