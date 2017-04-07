@@ -51,7 +51,7 @@ function! s:get_diff_lines() abort
   endif
 
   if !empty(repo) && s:is_tracked(fullpath)
-    let cmd = 'git diff -U0 --no-ext-diff HEAD:"%s" "%s"'
+    let cmd = 'git diff -U0 --exit-code --no-ext-diff HEAD:"%s" "%s"'
   elseif executable('diff')
     let cmd = 'diff -U0 "%s" "%s"'
   else
@@ -73,8 +73,8 @@ function! s:get_diff_lines() abort
   let difflines = split(system(printf(cmd, fname, tmpfile)), "\n")
   call delete(tmpfile)
 
-  if v:shell_error
-    return [[1, line('$')]]
+  if v:shell_error != 1
+    return []
   endif
 
   let groups = []
