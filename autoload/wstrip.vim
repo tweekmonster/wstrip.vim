@@ -50,27 +50,31 @@ function! s:get_diff_lines() abort
     endif
   endif
 
-  if !empty(repo) && s:is_tracked(fullpath)
-    let cmd = 'git diff -U0 --exit-code --no-ext-diff HEAD:"%s" "%s"'
-  elseif executable('diff')
-    let cmd = 'diff -U0 "%s" "%s"'
-  else
-    return []
-  endif
-
-  " This check is done before the file is written, so the buffer contents
-  " needs to be compared with what's already written.  git-diff also requires
-  " the file to exist inside of the working tree to diff against HEAD.
-  let tmpfile = printf('%s/.wstrip.%s', fnamemodify(fullpath, ':h'),
-        \ fnamemodify(fname, ':t'))
-
+  " A temp file is written since we need to compare with the on-disk copy
+  " before modifying the buffer and overwriting the file.
+  let tmpfile = tempname()
   let lines = getline(1, '$')
   if &fileformat ==# 'dos'
     call map(lines, 'v:val . "\r"')
   endif
   call writefile(lines, tmpfile)
 
-  let difflines = split(system(printf(cmd, fname, tmpfile)), "\n")
+  if !empty(repo) && s:is_tracked(fullpath)
+    " Git won't compare HEAD to an outside file.  To get around this, the HEAD
+    " content is piped to the stdin for `git diff --no-index`.
+    " Note: We technically could use `diff` here, but at this point, we
+    " already know `git-diff` exists.
+    let cmd = printf(
+          \ 'git show HEAD:"%s" | ' .
+          \ 'git diff -U0 --exit-code --no-ext-diff --no-index -- - "%s"',
+          \ fname, tmpfile)
+  elseif executable('diff')
+    let cmd = printf('diff -U0 "%s" "%s"', fullpath, tmpfile)
+  else
+    return []
+  endif
+
+  let difflines = split(system(cmd), "\n")
   call delete(tmpfile)
 
   if v:shell_error != 1
