@@ -121,11 +121,24 @@ function! wstrip#clean() abort
   endif
 
   let view = winsaveview()
+  let changes = 0
+
   for group in s:get_diff_lines()
+    let block = join(getline(group[0], group[1]), "\n") . "\n"
+    " Note: \s does not match newlines
+    if matchstr(block, '\s\+\n') == ''
+      continue
+    endif
+
+    let changes += 1
     execute join(group, ',').'s/'.wspattern.'//e'
   endfor
-  call histdel('search', -1)
-  let @/ = histget('search', -1)
+
+  if changes
+    call histdel('search', -1)
+    let @/ = histget('search', -1)
+  endif
+
   call winrestview(view)
 endfunction
 
